@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Cycle Detection - DFS Visualization</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        font-size: 1.1em;
+        opacity: 0.9;
+      }
+
+      .mode-toggle {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 20px;
+      }
+
+      .mode-btn {
+        padding: 12px 30px;
+        border: 2px solid white;
+        background: transparent;
+        color: white;
+        border-radius: 10px;
+        font-size: 1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .mode-btn.active {
+        background: white;
+        color: #667eea;
+      }
+
+      .mode-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .mode-btn.active:hover {
+        background: white;
+      }
+
+      .content {
+        display: grid;
+        grid-template-columns: 800px 1fr;
+        gap: 30px;
+        padding: 30px;
+      }
+
+      .left-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      canvas {
+        border: 3px solid #667eea;
+        border-radius: 15px;
+        background: #f8f9ff;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+        display: block;
+      }
+
+      .sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .controls {
+        background: #f8f9ff;
+        padding: 25px;
+        border-radius: 15px;
+        border: 2px solid #e0e4ff;
+      }
+
+      .control-group {
+        margin-bottom: 25px;
+      }
+
+      .control-group:last-child {
+        margin-bottom: 0;
+      }
+
+      .control-group h3 {
+        color: #667eea;
+        margin-bottom: 15px;
+        font-size: 1.2em;
+        border-bottom: 2px solid #e0e4ff;
+        padding-bottom: 10px;
+      }
+
+      button {
+        width: 100%;
+        padding: 15px;
+        margin: 8px 0;
+        border: none;
+        border-radius: 10px;
+        font-size: 1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        -webkit-appearance: none;
+        appearance: none;
+      }
+
+      button:active {
+        transform: scale(0.98);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-secondary {
+        background: #e0e4ff;
+        color: #667eea;
+      }
+
+      .btn-secondary:hover {
+        background: #d0d5ff;
+      }
+
+      .btn-success {
+        background: #10b981;
+        color: white;
+      }
+
+      .btn-success:hover {
+        background: #059669;
+      }
+
+      .btn-danger {
+        background: #ef4444;
+        color: white;
+      }
+
+      .btn-danger:hover {
+        background: #dc2626;
+      }
+
+      .status {
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        font-weight: 600;
+        text-align: center;
+      }
+
+      .status.checking {
+        background: #fef3c7;
+        color: #92400e;
+        border: 2px solid #fbbf24;
+      }
+
+      .status.cycle-found {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 2px solid #ef4444;
+      }
+
+      .status.no-cycle {
+        background: #d1fae5;
+        color: #065f46;
+        border: 2px solid #10b981;
+      }
+
+      .code-section {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 25px;
+        border-radius: 15px;
+        font-family: 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
+        font-size: 0.9em;
+        line-height: 1.8;
+        overflow-x: auto;
+        border: 3px solid #667eea;
+      }
+
+      .code-line {
+        padding: 4px 0;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .code-section .keyword {
+        color: #c792ea;
+        font-weight: 600;
+      }
+
+      .code-section .function {
+        color: #82aaff;
+        font-weight: 600;
+      }
+
+      .code-section .comment {
+        color: #697d8f;
+        font-style: italic;
+      }
+
+      .code-section .string {
+        color: #c3e88d;
+      }
+
+      .code-section .number {
+        color: #f78c6c;
+      }
+
+      .code-section .highlight {
+        background: linear-gradient(90deg, rgba(251, 191, 36, 0.4) 0%, transparent 100%);
+        border-left: 4px solid #fbbf24;
+        padding-left: 8px;
+        margin-left: -12px;
+        font-weight: 700;
+        animation: pulse 1s ease-in-out;
+      }
+
+      @keyframes pulse {
+
+        0%,
+        100% {
+          background-color: rgba(251, 191, 36, 0.3);
+        }
+
+        50% {
+          background-color: rgba(251, 191, 36, 0.5);
+        }
+      }
+
+      .execution-info {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 15px;
+      }
+
+      .execution-info h3 {
+        margin-bottom: 15px;
+        font-size: 1.3em;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        padding-bottom: 10px;
+      }
+
+      .exec-detail {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .exec-detail:last-child {
+        border-bottom: none;
+      }
+
+      .exec-label {
+        font-weight: 600;
+        opacity: 0.9;
+      }
+
+      .exec-value {
+        font-family: 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-weight: 700;
+      }
+
+      .stack-visualization {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        border: 2px solid #e0e4ff;
+      }
+
+      .stack-visualization h3 {
+        color: #667eea;
+        margin-bottom: 15px;
+        font-size: 1.2em;
+      }
+
+      .stack-item {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px;
+        margin: 8px 0;
+        border-radius: 8px;
+        font-family: 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+      }
+
+      .stack-empty {
+        text-align: center;
+        color: #94a3b8;
+        font-style: italic;
+        padding: 20px;
+      }
+
+      .legend {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 15px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        background: white;
+        border-radius: 8px;
+        font-size: 0.9em;
+      }
+
+      .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #333;
+        flex-shrink: 0;
+      }
+
+      .info-box {
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 4px solid #667eea;
+      }
+
+      .info-box h4 {
+        color: #667eea;
+        margin-bottom: 8px;
+      }
+
+      .info-box p {
+        color: #4b5563;
+        font-size: 0.95em;
+        line-height: 1.6;
+      }
+
+      .mode-indicator {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 700;
+        margin-top: 10px;
+      }
+
+      .mode-indicator.undirected {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+
+      .mode-indicator.directed {
+        background: #fce7f3;
+        color: #9f1239;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🔍 Graph Cycle Detection</h1>
+        <p>DFS-based cycle detection with algorithm comparison</p>
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="mode-undirected">↔️ Undirected Graph</button>
+          <button class="mode-btn" id="mode-directed">→ Directed Graph</button>
+        </div>
+        <div class="mode-indicator undirected" id="mode-indicator">
+          Current Mode: Undirected Graph
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="left-panel">
+          <canvas id="graphCanvas" width="800" height="500"></canvas>
+
+          <div class="code-section" id="codeSection">
+            <!-- Code will be inserted dynamically -->
+          </div>
+        </div>
+
+        <div class="sidebar">
+          <div class="controls">
+            <div class="status checking" id="status">
+              Ready to start
+            </div>
+
+            <div class="control-group">
+              <h3>📚 Example Scenarios</h3>
+              <button class="btn-primary" id="btn-simple-cycle">
+                🔴 Simple Cycle
+              </button>
+              <button class="btn-success" id="btn-simple-tree">
+                🟢 Tree / DAG
+              </button>
+              <button class="btn-secondary" id="btn-complex-cycle">
+                🔷 Complex Graph
+              </button>
+              <button class="btn-primary" id="btn-multiple-components">
+                🔵 Multiple Components
+              </button>
+              <button class="btn-danger" id="btn-dense-cycle">
+                ⭕ Dense Graph
+              </button>
+            </div>
+
+            <div class="control-group">
+              <h3>⚙️ Algorithm Control</h3>
+              <button class="btn-primary" id="btn-start">
+                ▶️ Start DFS
+              </button>
+              <button class="btn-secondary" id="btn-step">
+                ⏭️ Single Step
+              </button>
+              <button class="btn-danger" id="btn-reset">
+                🔄 Reset
+              </button>
+            </div>
+
+            <div class="legend">
+              <div class="legend-item">
+                <div class="legend-color" style="background: #94a3b8;"></div>
+                <span>Unvisited</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: #3b82f6;"></div>
+                <span>Current</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: #10b981;"></div>
+                <span>Visited</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: #fbbf24;"></div>
+                <span>Checking</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: #ef4444;"></div>
+                <span>Cycle!</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: #8b5cf6;"></div>
+                <span>In Stack</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="execution-info">
+            <h3>📊 Execution Details</h3>
+            <div class="exec-detail">
+              <span class="exec-label">Current Node:</span>
+              <span class="exec-value" id="currentNode">-</span>
+            </div>
+            <div class="exec-detail">
+              <span class="exec-label" id="parentLabel">Parent Node:</span>
+              <span class="exec-value" id="parentNode">-</span>
+            </div>
+            <div class="exec-detail">
+              <span class="exec-label">Visited Nodes:</span>
+              <span class="exec-value" id="visitedNodes">[]</span>
+            </div>
+            <div class="exec-detail" id="recursionStackDetail" style="display: none;">
+              <span class="exec-label">Recursion Stack:</span>
+              <span class="exec-value" id="recursionStack">[]</span>
+            </div>
+            <div class="exec-detail">
+              <span class="exec-label">Step:</span>
+              <span class="exec-value" id="stepCounter">0</span>
+            </div>
+          </div>
+
+          <div class="stack-visualization">
+            <h3>📚 DFS Call Stack</h3>
+            <div id="stackContent">
+              <div class="stack-empty">Stack is empty</div>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <h4>💡 Current Step</h4>
+            <p id="infoText">
+              Choose a graph scenario and start cycle detection!
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      'use strict';
+
+      const canvas = document.getElementById('graphCanvas');
+      const ctx = canvas.getContext('2d');
+
+      let currentMode = 'undirected'; // 'undirected' or 'directed'
+
+      // Code lines for UNDIRECTED graph
+      const undirectedCodeLines = [
+        { id: 0, indent: 0, text: '<span class="keyword">def</span> <span class="function">detect_cycle_undirected</span>(self):', desc: 'Cycle detection for undirected graphs' },
+        { id: 1, indent: 1, text: 'visited = [<span class="keyword">False</span>] * self.num_vertices', desc: 'Initialize visited array' },
+        { id: 2, indent: 1, text: '', desc: '' },
+        { id: 3, indent: 1, text: '<span class="keyword">def</span> <span class="function">dfs_helper</span>(curr, parent):', desc: 'DFS helper with parent tracking' },
+        { id: 4, indent: 2, text: 'visited[curr] = <span class="keyword">True</span>', desc: 'Mark current node as visited' },
+        { id: 5, indent: 2, text: '<span class="keyword">for</span> neighbor <span class="keyword">in</span> range(self.num_vertices):', desc: 'Check all neighbors' },
+        { id: 6, indent: 3, text: '<span class="keyword">if</span> self.adj_matrix[curr][neighbor] != <span class="number">0</span>:  <span class="comment"># edge exists?</span>', desc: 'Check if edge exists' },
+        { id: 7, indent: 4, text: '<span class="keyword">if not</span> visited[neighbor]:', desc: 'Neighbor not visited?' },
+        { id: 8, indent: 5, text: 'is_cycle = dfs_helper(neighbor, curr)', desc: 'Recursive DFS call' },
+        { id: 9, indent: 5, text: '<span class="keyword">if</span> is_cycle:', desc: 'Check recursion result' },
+        { id: 10, indent: 6, text: '<span class="keyword">return</span> <span class="keyword">True</span>', desc: 'Cycle found in recursion' },
+        { id: 11, indent: 4, text: '<span class="keyword">elif</span> neighbor != parent:', desc: 'Already visited, not parent?' },
+        { id: 12, indent: 5, text: '<span class="keyword">return</span> <span class="keyword">True</span>  <span class="comment"># Back edge = cycle!</span>', desc: 'BACK EDGE = CYCLE!' },
+        { id: 13, indent: 2, text: '<span class="keyword">return</span> <span class="keyword">False</span>', desc: 'No cycle from this node' },
+        { id: 14, indent: 1, text: '', desc: '' },
+        { id: 15, indent: 1, text: '<span class="keyword">for</span> vertex <span class="keyword">in</span> range(self.num_vertices):', desc: 'Check all components' },
+        { id: 16, indent: 2, text: '<span class="keyword">if not</span> visited[vertex]:', desc: 'Start DFS from unvisited' },
+        { id: 17, indent: 3, text: '<span class="keyword">if</span> dfs_helper(vertex, -<span class="number">1</span>):', desc: 'DFS with no parent' },
+        { id: 18, indent: 4, text: '<span class="keyword">return</span> <span class="keyword">True</span>', desc: 'Cycle found' },
+        { id: 19, indent: 1, text: '<span class="keyword">return</span> <span class="keyword">False</span>', desc: 'No cycle in graph' }
+      ];
+
+      // Code lines for DIRECTED graph
+      const directedCodeLines = [
+        { id: 0, indent: 0, text: '<span class="keyword">def</span> <span class="function">detect_cycle_directed</span>(self):', desc: 'Cycle detection for directed graphs' },
+        { id: 1, indent: 1, text: 'visited = [<span class="keyword">False</span>] * self.num_vertices', desc: 'Track visited nodes' },
+        { id: 2, indent: 1, text: 'rec_stack = [<span class="keyword">False</span>] * self.num_vertices', desc: 'Track recursion stack' },
+        { id: 3, indent: 1, text: '', desc: '' },
+        { id: 4, indent: 1, text: '<span class="keyword">def</span> <span class="function">dfs_helper</span>(curr):', desc: 'DFS helper (no parent needed)' },
+        { id: 5, indent: 2, text: 'visited[curr] = <span class="keyword">True</span>', desc: 'Mark as visited' },
+        { id: 6, indent: 2, text: 'rec_stack[curr] = <span class="keyword">True</span>  <span class="comment"># entering node</span>', desc: 'Add to recursion stack' },
+        { id: 7, indent: 2, text: '', desc: '' },
+        { id: 8, indent: 2, text: '<span class="keyword">for</span> neighbor <span class="keyword">in</span> range(self.num_vertices):', desc: 'Check all neighbors' },
+        { id: 9, indent: 3, text: '<span class="keyword">if</span> self.adj_matrix[curr][neighbor] != <span class="number">0</span>:', desc: 'Directed edge exists?' },
+        { id: 10, indent: 4, text: '<span class="keyword">if not</span> visited[neighbor]:', desc: 'Not visited yet?' },
+        { id: 11, indent: 5, text: '<span class="keyword">if</span> dfs_helper(neighbor):', desc: 'Recursive DFS' },
+        { id: 12, indent: 6, text: '<span class="keyword">return</span> <span class="keyword">True</span>', desc: 'Cycle in recursion' },
+        { id: 13, indent: 4, text: '<span class="keyword">elif</span> rec_stack[neighbor]:', desc: 'In current path?' },
+        { id: 14, indent: 5, text: '<span class="keyword">return</span> <span class="keyword">True</span>  <span class="comment"># Back edge = cycle!</span>', desc: 'BACK EDGE = CYCLE!' },
+        { id: 15, indent: 2, text: '', desc: '' },
+        { id: 16, indent: 2, text: 'rec_stack[curr] = <span class="keyword">False</span>  <span class="comment"># leaving node</span>', desc: 'Remove from rec stack' },
+        { id: 17, indent: 2, text: '<span class="keyword">return</span> <span class="keyword">False</span>', desc: 'No cycle from this node' },
+        { id: 18, indent: 1, text: '', desc: '' },
+        { id: 19, indent: 1, text: '<span class="keyword">for</span> vertex <span class="keyword">in</span> range(self.num_vertices):', desc: 'Check all components' },
+        { id: 20, indent: 2, text: '<span class="keyword">if not</span> visited[vertex]:', desc: 'Start DFS from unvisited' },
+        { id: 21, indent: 3, text: '<span class="keyword">if</span> dfs_helper(vertex):', desc: 'DFS call' },
+        { id: 22, indent: 4, text: '<span class="keyword">return</span> <span class="keyword">True</span>', desc: 'Cycle found' },
+        { id: 23, indent: 1, text: '<span class="keyword">return</span> <span class="keyword">False</span>', desc: 'No cycle in graph' }
+      ];
+
+      let currentCodeLines = undirectedCodeLines;
+      let currentLine = -1;
+      let animationTimer = null;
+
+      function renderCode() {
+        const codeSection = document.getElementById('codeSection');
+        codeSection.innerHTML = currentCodeLines.map(function (line) {
+          const indentSpaces = '&nbsp;&nbsp;&nbsp;&nbsp;'.repeat(line.indent);
+          const highlightClass = line.id === currentLine ? 'highlight' : '';
+          return '<div class="code-line ' + highlightClass + '">' + indentSpaces + line.text + '</div>';
+        }).join('');
+      }
+
+      function highlightLine(lineId) {
+        currentLine = lineId;
+        renderCode();
+        if (lineId >= 0 && currentCodeLines[lineId].desc) {
+          updateInfo(currentCodeLines[lineId].desc);
+        }
+      }
+
+      function updateExecutionInfo() {
+        document.getElementById('currentNode').textContent = animationState.current >= 0 ? animationState.current : '-';
+
+        if (currentMode === 'undirected') {
+          document.getElementById('parentNode').textContent = animationState.parent >= 0 ? animationState.parent : 'None';
+        } else {
+          document.getElementById('parentNode').textContent = 'N/A';
+        }
+
+        const visitedIndices = [];
+        for (let i = 0; i < animationState.visited.length; i++) {
+          if (animationState.visited[i]) {
+            visitedIndices.push(i);
+          }
+        }
+        document.getElementById('visitedNodes').textContent = '[' + visitedIndices.join(', ') + ']';
+
+        if (currentMode === 'directed') {
+          const recStackIndices = [];
+          for (let i = 0; i < animationState.recStack.length; i++) {
+            if (animationState.recStack[i]) {
+              recStackIndices.push(i);
+            }
+          }
+          document.getElementById('recursionStack').textContent = '[' + recStackIndices.join(', ') + ']';
+        }
+
+        document.getElementById('stepCounter').textContent = animationState.step;
+      }
+
+      function updateStackVisualization() {
+        const stackContent = document.getElementById('stackContent');
+        if (animationState.stack.length === 0) {
+          stackContent.innerHTML = '<div class="stack-empty">Stack is empty</div>';
+        } else {
+          let stackHTML;
+          if (currentMode === 'undirected') {
+            stackHTML = animationState.stack.slice().reverse().map(function (item) {
+              return '<div class="stack-item">dfs_helper(' + item.vertex + ', parent=' + item.parent + ')</div>';
+            }).join('');
+          } else {
+            stackHTML = animationState.stack.slice().reverse().map(function (item) {
+              return '<div class="stack-item">dfs_helper(' + item.vertex + ')</div>';
+            }).join('');
+          }
+          stackContent.innerHTML = stackHTML;
+        }
+      }
+
+      let graph = {
+        vertices: [],
+        edges: [],
+        adjMatrix: []
+      };
+
+      let animationState = {
+        visited: [],
+        recStack: [],
+        current: -1,
+        parent: -1,
+        stack: [],
+        cycleFound: false,
+        cycleEdge: null,
+        isRunning: false,
+        step: 0,
+        phase: 'init',
+        checkingNeighbor: -1
+      };
+
+      function Vertex(id, x, y) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+        this.radius = 30;
+      }
+
+      function switchMode(mode) {
+        currentMode = mode;
+
+        // Update UI
+        if (mode === 'undirected') {
+          document.getElementById('mode-undirected').classList.add('active');
+          document.getElementById('mode-directed').classList.remove('active');
+          document.getElementById('mode-indicator').textContent = 'Current Mode: Undirected Graph';
+          document.getElementById('mode-indicator').className = 'mode-indicator undirected';
+          document.getElementById('parentLabel').textContent = 'Parent Node:';
+          document.getElementById('recursionStackDetail').style.display = 'none';
+          currentCodeLines = undirectedCodeLines;
+        } else {
+          document.getElementById('mode-undirected').classList.remove('active');
+          document.getElementById('mode-directed').classList.add('active');
+          document.getElementById('mode-indicator').textContent = 'Current Mode: Directed Graph';
+          document.getElementById('mode-indicator').className = 'mode-indicator directed';
+          document.getElementById('parentLabel').textContent = 'Recursion State:';
+          document.getElementById('recursionStackDetail').style.display = 'flex';
+          currentCodeLines = directedCodeLines;
+        }
+
+        renderCode();
+        loadSimpleCycle();
+      }
+
+      function loadSimpleCycle() {
+        let positions, edges;
+
+        if (currentMode === 'undirected') {
+          positions = [
+            { x: 200, y: 150 },
+            { x: 600, y: 150 },
+            { x: 600, y: 350 },
+            { x: 200, y: 350 }
+          ];
+          edges = [
+            { from: 0, to: 1 },
+            { from: 1, to: 2 },
+            { from: 2, to: 3 },
+            { from: 3, to: 0 }
+          ];
+        } else {
+          positions = [
+            { x: 200, y: 150 },
+            { x: 600, y: 150 },
+            { x: 600, y: 350 },
+            { x: 200, y: 350 }
+          ];
+          edges = [
+            { from: 0, to: 1 },
+            { from: 1, to: 2 },
+            { from: 2, to: 3 },
+            { from: 3, to: 0 }
+          ];
+        }
+
+        graph.vertices = positions.map(function (pos, i) {
+          return new Vertex(i, pos.x, pos.y);
+        });
+        graph.edges = edges;
+
+        createAdjMatrix();
+        reset();
+        updateStatus('Simple Cycle loaded', 'checking');
+        updateInfo('Graph with a simple cycle');
+      }
+
+      function loadSimpleTree() {
+        let positions, edges;
+
+        if (currentMode === 'undirected') {
+          positions = [
+            { x: 400, y: 80 },
+            { x: 250, y: 200 },
+            { x: 550, y: 200 },
+            { x: 150, y: 350 },
+            { x: 350, y: 350 }
+          ];
+          edges = [
+            { from: 0, to: 1 },
+            { from: 0, to: 2 },
+            { from: 1, to: 3 },
+            { from: 1, to: 4 }
+          ];
+        } else {
+          // DAG - Directed Acyclic Graph
+          positions = [
+            { x: 400, y: 80 },
+            { x: 250, y: 200 },
+            { x: 550, y: 200 },
+            { x: 150, y: 350 },
+            { x: 350, y: 350 }
+          ];
+          edges = [
+            { from: 0, to: 1 },
+            { from: 0, to: 2 },
+            { from: 1, to: 3 },
+            { from: 1, to: 4 },
+            { from: 2, to: 4 }
+          ];
+        }
+
+        graph.vertices = positions.map(function (pos, i) {
+          return new Vertex(i, pos.x, pos.y);
+        });
+        graph.edges = edges;
+
+        createAdjMatrix();
+        reset();
+        updateStatus('Tree/DAG loaded', 'checking');
+        updateInfo(currentMode === 'undirected' ? 'Tree structure - no cycles' : 'DAG - Directed Acyclic Graph');
+      }
+
+      function loadComplexCycle() {
+        let positions, edges;
+
+        positions = [
+          { x: 150, y: 150 }, { x: 350, y: 100 }, { x: 550, y: 150 },
+          { x: 150, y: 350 }, { x: 350, y: 300 }, { x: 550, y: 350 }
+        ];
+
+        if (currentMode === 'undirected') {
+          edges = [
+            { from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 5 },
+            { from: 5, to: 4 }, { from: 4, to: 3 }, { from: 3, to: 0 },
+            { from: 1, to: 4 }
+          ];
+        } else {
+          edges = [
+            { from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 5 },
+            { from: 5, to: 4 }, { from: 4, to: 3 }, { from: 3, to: 0 },
+            { from: 1, to: 4 }
+          ];
+        }
+
+        graph.vertices = positions.map(function (pos, i) {
+          return new Vertex(i, pos.x, pos.y);
+        });
+        graph.edges = edges;
+
+        createAdjMatrix();
+        reset();
+        updateStatus('Complex Graph loaded', 'checking');
+        updateInfo('Complex graph with multiple paths');
+      }
+
+      function loadMultipleComponents() {
+        let positions, edges;
+
+        positions = [
+          { x: 150, y: 150 }, { x: 300, y: 150 }, { x: 225, y: 280 },
+          { x: 500, y: 150 }, { x: 650, y: 150 }, { x: 575, y: 350 }
+        ];
+
+        if (currentMode === 'undirected') {
+          edges = [
+            { from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 0 },
+            { from: 3, to: 4 }, { from: 4, to: 5 }
+          ];
+        } else {
+          edges = [
+            { from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 0 },
+            { from: 3, to: 4 }, { from: 4, to: 5 }
+          ];
+        }
+
+        graph.vertices = positions.map(function (pos, i) {
+          return new Vertex(i, pos.x, pos.y);
+        });
+        graph.edges = edges;
+
+        createAdjMatrix();
+        reset();
+        updateStatus('Multiple Components loaded', 'checking');
+        updateInfo('Disconnected components - one has cycle');
+      }
+
+      function loadDenseCycle() {
+        let positions, edges;
+
+        positions = [
+          { x: 400, y: 100 },
+          { x: 600, y: 250 },
+          { x: 500, y: 400 },
+          { x: 300, y: 400 },
+          { x: 200, y: 250 }
+        ];
+
+        if (currentMode === 'undirected') {
+          edges = [
+            { from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 3 },
+            { from: 3, to: 4 }, { from: 4, to: 0 },
+            { from: 0, to: 2 }, { from: 0, to: 3 }, { from: 1, to: 4 }
+          ];
+        } else {
+          edges = [
+            { from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 3 },
+            { from: 3, to: 4 }, { from: 4, to: 0 },
+            { from: 0, to: 2 }, { from: 1, to: 4 }
+          ];
+        }
+
+        graph.vertices = positions.map(function (pos, i) {
+          return new Vertex(i, pos.x, pos.y);
+        });
+        graph.edges = edges;
+
+        createAdjMatrix();
+        reset();
+        updateStatus('Dense Graph loaded', 'checking');
+        updateInfo('Dense graph with many connections');
+      }
+
+      function createAdjMatrix() {
+        const n = graph.vertices.length;
+        graph.adjMatrix = [];
+        for (let i = 0; i < n; i++) {
+          graph.adjMatrix[i] = [];
+          for (let j = 0; j < n; j++) {
+            graph.adjMatrix[i][j] = 0;
+          }
+        }
+
+        for (let i = 0; i < graph.edges.length; i++) {
+          const edge = graph.edges[i];
+          graph.adjMatrix[edge.from][edge.to] = 1;
+          if (currentMode === 'undirected') {
+            graph.adjMatrix[edge.to][edge.from] = 1;
+          }
+        }
+      }
+
+      function reset() {
+        if (animationTimer) {
+          clearTimeout(animationTimer);
+          animationTimer = null;
+        }
+
+        animationState = {
+          visited: [],
+          recStack: [],
+          current: -1,
+          parent: -1,
+          stack: [],
+          cycleFound: false,
+          cycleEdge: null,
+          isRunning: false,
+          step: 0,
+          phase: 'init',
+          checkingNeighbor: -1
+        };
+
+        for (let i = 0; i < graph.vertices.length; i++) {
+          animationState.visited.push(false);
+          animationState.recStack.push(false);
+        }
+
+        currentLine = -1;
+        renderCode();
+        updateExecutionInfo();
+        updateStackVisualization();
+        draw();
+      }
+
+      function startDetection() {
+        if (animationState.isRunning) return;
+
+        reset();
+        animationState.isRunning = true;
+        animationState.phase = 'init';
+        updateStatus('DFS running...', 'checking');
+        runAnimation();
+      }
+
+      function stepForward() {
+        if (!animationState.isRunning) {
+          startDetection();
+          return;
+        }
+        performStep();
+      }
+
+      function runAnimation() {
+        if (!animationState.isRunning) return;
+
+        performStep();
+
+        if (animationState.isRunning && !animationState.cycleFound) {
+          animationTimer = setTimeout(runAnimation, 1200);
+        }
+      }
+
+      function performStep() {
+        if (currentMode === 'undirected') {
+          performStepUndirected();
+        } else {
+          performStepDirected();
+        }
+      }
+
+      function performStepUndirected() {
+        animationState.step++;
+
+        if (animationState.phase === 'init' || animationState.stack.length === 0) {
+          if (animationState.phase === 'init') {
+            highlightLine(1);
+            updateInfo('🚀 Initialize visited array');
+            animationState.phase = 'find_start';
+            updateExecutionInfo();
+            draw();
+            return;
+          }
+
+          let nextUnvisited = -1;
+          for (let i = 0; i < graph.vertices.length; i++) {
+            if (!animationState.visited[i]) {
+              nextUnvisited = i;
+              break;
+            }
+          }
+
+          if (nextUnvisited === -1) {
+            highlightLine(19);
+            animationState.isRunning = false;
+            updateStatus('✅ No cycle found!', 'no-cycle');
+            updateInfo('🎉 All nodes visited - no cycle!');
+            updateExecutionInfo();
+            updateStackVisualization();
+            draw();
+            return;
+          }
+
+          highlightLine(16);
+          updateInfo('🔍 Check node ' + nextUnvisited);
+          animationState.stack.push({ vertex: nextUnvisited, parent: -1, phase: 'start' });
+          animationState.phase = 'start_dfs';
+          updateExecutionInfo();
+          updateStackVisualization();
+          draw();
+          return;
+        }
+
+        const current = animationState.stack[animationState.stack.length - 1];
+
+        if (current.phase === 'start') {
+          highlightLine(17);
+          updateInfo('➡️ DFS from node ' + current.vertex + ' (parent: ' + current.parent + ')');
+          current.phase = 'mark_visited';
+          animationState.current = current.vertex;
+          animationState.parent = current.parent;
+          updateExecutionInfo();
+          updateStackVisualization();
+          draw();
+          return;
+        }
+
+        if (current.phase === 'mark_visited') {
+          highlightLine(4);
+          animationState.visited[current.vertex] = true;
+          updateInfo('✓ Mark node ' + current.vertex + ' as VISITED');
+          current.phase = 'check_neighbors';
+          current.neighborIndex = 0;
+          updateExecutionInfo();
+          updateStackVisualization();
+          draw();
+          return;
+        }
+
+        if (current.phase === 'check_neighbors') {
+          highlightLine(5);
+
+          while (current.neighborIndex < graph.vertices.length) {
+            const neighbor = current.neighborIndex;
+
+            if (graph.adjMatrix[current.vertex][neighbor] !== 0) {
+              highlightLine(6);
+              animationState.checkingNeighbor = neighbor;
+              updateInfo('🔗 Edge: ' + current.vertex + ' → ' + neighbor);
+              current.phase = 'process_neighbor';
+              updateExecutionInfo();
+              updateStackVisualization();
+              draw();
+              return;
+            }
+            current.neighborIndex++;
+          }
+
+          highlightLine(13);
+          updateInfo('⬅️ Backtrack from ' + current.vertex);
+          animationState.stack.pop();
+          if (animationState.stack.length > 0) {
+            const prev = animationState.stack[animationState.stack.length - 1];
+            animationState.current = prev.vertex;
+            animationState.parent = prev.parent;
+          } else {
+            animationState.current = -1;
+            animationState.parent = -1;
+          }
+          animationState.checkingNeighbor = -1;
+          updateExecutionInfo();
+          updateStackVisualization();
+          draw();
+          return;
+        }
+
+        if (current.phase === 'process_neighbor') {
+          const neighbor = current.neighborIndex;
+
+          if (!animationState.visited[neighbor]) {
+            highlightLine(7);
+            updateInfo('🆕 Node ' + neighbor + ' unvisited - recurse');
+            animationState.stack.push({ vertex: neighbor, parent: current.vertex, phase: 'start' });
+            current.phase = 'check_neighbors';
+            current.neighborIndex++;
+            animationState.checkingNeighbor = -1;
+            updateExecutionInfo();
+            updateStackVisualization();
+            draw();
+            return;
+          } else if (neighbor !== current.parent) {
+            highlightLine(12);
+            animationState.cycleFound = true;
+            animationState.cycleEdge = { from: current.vertex, to: neighbor };
+            animationState.isRunning = false;
+            updateStatus('🔴 CYCLE DETECTED!', 'cycle-found');
+            updateInfo('🔴 BACK EDGE! Node ' + current.vertex + ' → ' + neighbor + ' (not parent)');
+            updateExecutionInfo();
+            updateStackVisualization();
+            draw();
+            return;
+          } else {
+            highlightLine(11);
+            updateInfo('↩️ Node ' + neighbor + ' is parent - skip');
+            current.neighborIndex++;
+            current.phase = 'check_neighbors';
+            animationState.checkingNeighbor = -1;
+            updateExecutionInfo();
+            updateStackVisualization();
+            draw();
+            return;
+          }
+        }
+      }
+
+      function performStepDirected() {
+        animationState.step++;
+
+        if (animationState.phase === 'init' || animationState.stack.length === 0) {
+          if (animationState.phase === 'init') {
+            highlightLine(1);
+            updateInfo('🚀 Initialize visited array');
+            animationState.phase = 'init_rec';
+            updateExecutionInfo();
+            draw();
+            return;
+          }
+
+          if (animationState.phase === 'init_rec') {
+            highlightLine(2);
+            updateInfo('🚀 Initialize recursion stack array');
+            animationState.phase = 'find_start';
+            updateExecutionInfo();
+            draw();
+            return;
+          }
+
+          let nextUnvisited = -1;
+          for (let i = 0; i < graph.vertices.length; i++) {
+            if (!animationState.visited[i]) {
+              nextUnvisited = i;
+              break;
+            }
+          }
+
+          if (nextUnvisited === -1) {
+            highlightLine(23);
+            animationState.isRunning = false;
+            updateStatus('✅ No cycle found!', 'no-cycle');
+            updateInfo('🎉 All nodes visited - no cycle!');
+            updateExecutionInfo();
+            updateStackVisualization();
+            draw();
+            return;
+          }
+
+          highlightLine(20);
+          updateInfo('🔍 Check node ' + nextUnvisited);
+          animationState.stack.push({ vertex: nextUnvisited, phase: 'start' });
+          animationState.phase = 'start_dfs';
+          updateExecutionInfo();
+          updateStackVisualization();
+          draw();
+          return;
+        }
+
+        const current = animationState.stack[animationState.stack.length - 1];
+
+        if (current.phase === 'start') {
+          highlightLine(21);
+          updateInfo('➡️ DFS from node ' + current.vertex);
+          current.phase = 'mark_visited';
+          animationState.current = current.vertex;
+          updateExecutionInfo();
+          updateStackVisualization();
+          draw();
+          return;
+        }
+
+        if (current.phase === 'mark_visited') {
+          highlightLine(5);
+          animationState.visited[current.vertex] = true;
+          updateInfo('✓ Mark node ' + current.vertex + ' as VISITED');
+          current.phase = 'add_to_rec_stack';
+          updateExecutionInfo();
+          updateStackVisualization();
+          draw();
+          return;
+        }
+
+        if (current.phase === 'add_to_rec_stack') {
+          highlightLine(6);
+          animationState.recStack[current.vertex] = true;
+          updateInfo('📥 Add node ' + current.vertex + ' to recursion stack');
+          current.phase = 'check_neighbors';
+          current.neighborIndex = 0;
+          updateExecutionInfo();
+          updateStackVisualization();
+          draw();
+          return;
+        }
+
+        if (current.phase === 'check_neighbors') {
+          highlightLine(8);
+
+          while (current.neighborIndex < graph.vertices.length) {
+            const neighbor = current.neighborIndex;
+
+            if (graph.adjMatrix[current.vertex][neighbor] !== 0) {
+              highlightLine(9);
+              animationState.checkingNeighbor = neighbor;
+              updateInfo('🔗 Directed edge: ' + current.vertex + ' → ' + neighbor);
+              current.phase = 'process_neighbor';
+              updateExecutionInfo();
+              updateStackVisualization();
+              draw();
+              return;
+            }
+            current.neighborIndex++;
+          }
+
+          highlightLine(16);
+          animationState.recStack[current.vertex] = false;
+          updateInfo('📤 Remove node ' + current.vertex + ' from recursion stack');
+          current.phase = 'return_false';
+          updateExecutionInfo();
+          updateStackVisualization();
+          draw();
+          return;
+        }
+
+        if (current.phase === 'process_neighbor') {
+          const neighbor = current.neighborIndex;
+
+          if (!animationState.visited[neighbor]) {
+            highlightLine(10);
+            updateInfo('🆕 Node ' + neighbor + ' unvisited - recurse');
+            animationState.stack.push({ vertex: neighbor, phase: 'start' });
+            current.phase = 'check_neighbors';
+            current.neighborIndex++;
+            animationState.checkingNeighbor = -1;
+            updateExecutionInfo();
+            updateStackVisualization();
+            draw();
+            return;
+          } else if (animationState.recStack[neighbor]) {
+            highlightLine(14);
+            animationState.cycleFound = true;
+            animationState.cycleEdge = { from: current.vertex, to: neighbor };
+            animationState.isRunning = false;
+            updateStatus('🔴 CYCLE DETECTED!', 'cycle-found');
+            updateInfo('🔴 BACK EDGE! Node ' + current.vertex + ' → ' + neighbor + ' (in rec stack)');
+            updateExecutionInfo();
+            updateStackVisualization();
+            draw();
+            return;
+          } else {
+            highlightLine(13);
+            updateInfo('✓ Node ' + neighbor + ' visited, not in rec stack - cross edge');
+            current.neighborIndex++;
+            current.phase = 'check_neighbors';
+            animationState.checkingNeighbor = -1;
+            updateExecutionInfo();
+            updateStackVisualization();
+            draw();
+            return;
+          }
+        }
+
+        if (current.phase === 'return_false') {
+          highlightLine(17);
+          updateInfo('⬅️ Return False from ' + current.vertex);
+          animationState.stack.pop();
+          if (animationState.stack.length > 0) {
+            const prev = animationState.stack[animationState.stack.length - 1];
+            animationState.current = prev.vertex;
+          } else {
+            animationState.current = -1;
+          }
+          animationState.checkingNeighbor = -1;
+          updateExecutionInfo();
+          updateStackVisualization();
+          draw();
+          return;
+        }
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw edges
+        for (let i = 0; i < graph.edges.length; i++) {
+          const edge = graph.edges[i];
+          const v1 = graph.vertices[edge.from];
+          const v2 = graph.vertices[edge.to];
+
+          ctx.beginPath();
+          ctx.moveTo(v1.x, v1.y);
+          ctx.lineTo(v2.x, v2.y);
+
+          if (animationState.cycleEdge &&
+            edge.from === animationState.cycleEdge.from &&
+            edge.to === animationState.cycleEdge.to) {
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 6;
+          } else if (animationState.checkingNeighbor >= 0 &&
+            edge.from === animationState.current &&
+            edge.to === animationState.checkingNeighbor) {
+            ctx.strokeStyle = '#fbbf24';
+            ctx.lineWidth = 5;
+          } else {
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 3;
+          }
+
+          ctx.stroke();
+
+          // Draw arrow for directed graphs
+          if (currentMode === 'directed') {
+            const angle = Math.atan2(v2.y - v1.y, v2.x - v1.x);
+            const arrowLength = 15;
+            const arrowWidth = 8;
+
+            const endX = v2.x - Math.cos(angle) * v2.radius;
+            const endY = v2.y - Math.sin(angle) * v2.radius;
+
+            ctx.beginPath();
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(
+              endX - arrowLength * Math.cos(angle - Math.PI / 6),
+              endY - arrowLength * Math.sin(angle - Math.PI / 6)
+            );
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(
+              endX - arrowLength * Math.cos(angle + Math.PI / 6),
+              endY - arrowLength * Math.sin(angle + Math.PI / 6)
+            );
+            ctx.stroke();
+          }
+        }
+
+        // Draw vertices
+        for (let i = 0; i < graph.vertices.length; i++) {
+          const vertex = graph.vertices[i];
+
+          ctx.beginPath();
+          ctx.arc(vertex.x, vertex.y, vertex.radius, 0, Math.PI * 2);
+
+          if (animationState.cycleFound &&
+            (i === animationState.cycleEdge.from || i === animationState.cycleEdge.to)) {
+            ctx.fillStyle = '#ef4444';
+          } else if (i === animationState.checkingNeighbor) {
+            ctx.fillStyle = '#fbbf24';
+          } else if (i === animationState.current) {
+            ctx.fillStyle = '#3b82f6';
+          } else if (currentMode === 'directed' && animationState.recStack[i]) {
+            ctx.fillStyle = '#8b5cf6';
+          } else if (animationState.visited[i]) {
+            ctx.fillStyle = '#10b981';
+          } else {
+            ctx.fillStyle = '#94a3b8';
+          }
+
+          ctx.fill();
+          ctx.strokeStyle = '#1e293b';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+
+          ctx.fillStyle = 'white';
+          ctx.font = 'bold 22px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(i.toString(), vertex.x, vertex.y);
+        }
+
+        // Draw parent connection for undirected
+        if (currentMode === 'undirected' && animationState.current >= 0 && animationState.parent >= 0) {
+          const curr = graph.vertices[animationState.current];
+          const par = graph.vertices[animationState.parent];
+
+          ctx.beginPath();
+          ctx.setLineDash([10, 5]);
+          ctx.moveTo(curr.x, curr.y);
+          ctx.lineTo(par.x, par.y);
+          ctx.strokeStyle = '#8b5cf6';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+
+      function updateStatus(text, type) {
+        const status = document.getElementById('status');
+        status.textContent = text;
+        status.className = 'status ' + type;
+      }
+
+      function updateInfo(text) {
+        document.getElementById('infoText').textContent = text;
+      }
+
+      // Event listeners
+      document.getElementById('mode-undirected').addEventListener('click', function () {
+        switchMode('undirected');
+      });
+
+      document.getElementById('mode-directed').addEventListener('click', function () {
+        switchMode('directed');
+      });
+
+      document.getElementById('btn-simple-cycle').addEventListener('click', loadSimpleCycle);
+      document.getElementById('btn-simple-tree').addEventListener('click', loadSimpleTree);
+      document.getElementById('btn-complex-cycle').addEventListener('click', loadComplexCycle);
+      document.getElementById('btn-multiple-components').addEventListener('click', loadMultipleComponents);
+      document.getElementById('btn-dense-cycle').addEventListener('click', loadDenseCycle);
+
+      document.getElementById('btn-start').addEventListener('click', startDetection);
+      document.getElementById('btn-step').addEventListener('click', stepForward);
+      document.getElementById('btn-reset').addEventListener('click', reset);
+
+      // Initial load
+      renderCode();
+      loadSimpleCycle();
+    </script>
+  </body>
+
+</html>
